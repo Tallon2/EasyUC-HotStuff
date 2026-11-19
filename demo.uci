@@ -1,0 +1,114 @@
+load VoteDemo.
+functionality VoteDemo.VoteReal.
+prover [""].
+hint / VoteCore.vote_eval.
+var p0 : port.
+var p1 : port.
+var p2 : port.
+var p3 : port.
+var outsider : port.
+assumption distinct : p0 <> p1 /\ p0 <> p2 /\ p0 <> p3 /\ p1 <> p2 /\ p1 <> p3 /\ p2 <> p3.
+assumption demo_ports_reverse_neq : p1 <> p0 /\ p2 <> p0 /\ p2 <> p1 /\ p3 <> p0 /\ p3 <> p1 /\ p3 <> p2.
+assumption outside : outsider <> p0 /\ outsider <> p1 /\ outsider <> p2 /\ outsider <> p3.
+assumption p0_env : envport func p0.
+assumption p1_env : envport func p1.
+assumption p2_env : envport func p2.
+assumption p3_env : envport func p3.
+assumption outsider_env : envport func outsider.
+real.
+send p0@VoteDemo.Voting.D.start(p0,p1,p2,p3)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.ready@p0 ctrl_env.
+
+(* node 0 accepted; below quorum *)
+send p0@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,1,false)@p0 ctrl_env.
+
+(* duplicate does not count *)
+send p0@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p0 ctrl_env.
+
+(* unregistered sender rejected *)
+send outsider@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@outsider ctrl_env.
+
+(* wrong session rejected *)
+send p1@VoteDemo.Voting.D.vote(2,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p1 ctrl_env.
+
+(* wrong view rejected *)
+send p1@VoteDemo.Voting.D.vote(1,2,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p1 ctrl_env.
+
+(* wrong phase rejected *)
+send p1@VoteDemo.Voting.D.vote(1,1,1,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p1 ctrl_env.
+
+(* wrong block rejected *)
+send p1@VoteDemo.Voting.D.vote(1,1,0,99)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p1 ctrl_env.
+
+(* two distinct votes still no QC *)
+send p1@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,2,false)@p1 ctrl_env.
+
+(* third distinct vote forms QC *)
+send p2@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,3,true)@p2 ctrl_env.
+
+(* duplicate after QC is harmless *)
+send p2@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,3,true)@p2 ctrl_env.
+
+(* fourth distinct vote preserves QC *)
+send p3@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,4,true)@p3 ctrl_env.
+
+(* last permitted invocation *)
+send p3@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,4,true)@p3 ctrl_env.
+
+(* The bounded demo stops processing at the thirteenth vote request. *)
+send p0@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert fail_out.
+finish.
+
+(* Check representative outputs through VoteIdeal and VoteSim. *)
+ideal.
+send p0@VoteDemo.Voting.D.start(p0,p1,p2,p3)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.ready@p0 ctrl_env.
+
+send p0@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,1,false)@p0 ctrl_env.
+
+send p0@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@p0 ctrl_env.
+
+send outsider@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(false,1,false)@outsider ctrl_env.
+
+send p1@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,2,false)@p1 ctrl_env.
+
+send p2@VoteDemo.Voting.D.vote(1,1,0,42)$func.
+run.
+assert msg_out ((func,1))@VoteDemo.Voting.D.result(true,3,true)@p2 ctrl_env.
+finish.
