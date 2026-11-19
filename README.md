@@ -37,9 +37,3 @@ dsl="$EASYUC_DSL_DIR"
 | [VoteDemo.uc](VoteDemo.uc) | EasyUC 真实模型、理想模型和演示用模拟器 |
 | [demo.uci](demo.uci) | 投票、重放、非法票和预算耗尽的场景断言 |
 | [verify.sh](verify.sh) | 一次执行全部检查 |
-
-## 论文引用
-
-引用整个项目时，可写作「Tallon2，Basic HotStuff 机械化验证，GitHub」。引用论文中的具体实验结果时，请附上对应周次和 Git 提交永久链接，方便读者复现当时使用的版本。从仓库提交历史进入指定提交即可取得链接。[项目仓库](https://github.com/Tallon2/EasyUC-HotStuff)
-
-第 0 周基线对应提交 [`dad724e`](https://github.com/Tallon2/EasyUC-HotStuff/commit/dad724e640916a527112a9fdc5091862484b7383)。克隆后可运行 `git checkout dad724e640916a527112a9fdc5091862484b7383` 取得该版本，再按上面的步骤复现。
